@@ -91,10 +91,12 @@ function syncControls() {
   byId('measure-noise').disabled = !noiseMeasurement && !anySourceActive();
   for (const button of document.querySelectorAll('.take-select, .delete-take')) button.disabled = busy || sessionBusy || state.sourceConnecting;
   if (session) {
-    byId('play-clip').disabled = busy || sessionBusy || !session.buffer || Boolean(session.playback);
+    for (const id of ['trim-start', 'trim-end', 'loop', 'audition-mode']) byId(id).disabled = busy || sessionBusy || state.sourceConnecting || !session.editor?.hasAudio;
+    byId('play-clip').disabled = busy || sessionBusy || !session.editor?.hasAudio || Boolean(session.playback);
     byId('stop-playback').disabled = !session.playback;
-    byId('export-audio').disabled = busy || sessionBusy || !session.buffer;
+    byId('export-audio').disabled = busy || sessionBusy || !session.editor?.hasAudio;
     byId('download-original').disabled = busy || sessionBusy || !session.buffer;
+    session.editor?.update({fields: false});
   }
 }
 
@@ -177,6 +179,7 @@ function sourceChanged(kind) {
     return;
   }
   state.sourceKind = kind;
+  if (kind === 'idle') byId('source-details').textContent = 'Microphone not connected';
   const active = kind === 'playback' || kind === 'microphone' || kind === 'demo';
   byId('signal-state').textContent = kind === 'microphone' ? 'MICROPHONE' : kind === 'demo' ? 'TEST SIGNAL' : kind === 'playback' ? 'FILE PLAYBACK' : kind === 'clip' ? 'CLIP READY' : 'NO INPUT';
   if (kind === 'clip') {

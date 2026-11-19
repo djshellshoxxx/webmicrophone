@@ -20,6 +20,7 @@ WebMicrophone is designed to capture a microphone or open a local recording, kee
 - Saved browser presets and validated portable JSON.
 - Local file import and re-rendering, WAV16/WAV24/float32 export, sample-rate selection and available compressed encoders.
 - Countdown and timed recording, non-destructive trimming and loop audition.
+- A compact sidebar clip editor with cut/copy/paste, split regions, reverse, fades, undo/redo, clickable waveform seeking, and independent speed/stretch/pitch controls. See [the clip editor specification](docs/specs/13-compact-clip-editor.md).
 
 The individual specifications define acceptance requirements. They do not claim that every target has been verified on every browser; implementation and release test evidence must identify the tested capabilities.
 
@@ -32,6 +33,12 @@ The individual specifications define acceptance requirements. They do not claim 
 5. Re-render from the preserved source and export a supported format.
 
 Monitoring starts muted. A monitoring delay is an audition control, not feedback cancellation. Browser capture may include hardware or operating-system processing; “original” means the samples delivered to this application.
+
+## Compact editing
+
+Select a take or open a file, then use the **Clip editor** directly below **Listen live**. Click its waveform to seek, drag to select, or double-click between split markers to select a chop. **Cut** saves the selection to the editor clipboard; **Paste** inserts it at the cursor. **Keep** trims everything outside the selection. Reverse, duplicate, silence and short edge fades are available with undo/redo.
+
+The **Time / pitch** tab separates tape-style Speed (0.5–2×), pitch-preserving Stretch (50–200% duration), and Pitch (±12 semitones). Timing changes apply to preview and export. Preparation stays local and can be cancelled; extreme settings may introduce audible artifacts. The original download bypasses edits and timing. Edit history is local to the selected clip in this session: download an edited render before changing clips or leaving.
 
 ## Honest audio limits
 

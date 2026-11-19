@@ -7,7 +7,7 @@ export function validateSourceShape({ sampleRate, channels, frames, duration = f
   if (!Number.isFinite(duration) || duration <= 0 || !Number.isInteger(frames) || frames <= 0) throw new Error('The audio file has no valid, finite duration.');
   if (!Number.isFinite(sampleRate) || sampleRate < 8000 || sampleRate > 192000) throw new Error('The audio sample rate is outside the supported 8–192 kHz range.');
   if (![1, 2].includes(channels)) throw new Error('Import supports mono and stereo audio. Convert multichannel audio to a chosen mono or stereo mix first.');
-  if (duration > RECORDING_LIMITS.maxDurationSeconds + 1 / sampleRate) throw new Error('This version accepts recordings up to 10 minutes. Trim this file before importing.');
+  if (duration > RECORDING_LIMITS.maxDurationSeconds) throw new Error('This version accepts recordings up to 10 minutes. Trim this file before importing.');
   if (frames * channels * 4 > RECORDING_LIMITS.maxSourceBytes) throw new Error('Decoded audio exceeds the 256 MiB source limit. Use a shorter recording.');
 }
 

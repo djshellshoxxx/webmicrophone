@@ -34,6 +34,7 @@ The initial product performs signal filtering and speech enhancement. It does no
 | lab-experience | [10](docs/specs/10-lab-experience.md) | Theme, responsive accessible UI, navigation and Pages integration | UI modules |
 | verification | [11](docs/specs/11-verification.md) | Repeatable functional and audio correctness gates | all shipped modules |
 | semantic-extraction | [12](docs/specs/12-semantic-extraction-research.md) | Future described-sound or exemplar separation | separate research gate |
+| compact-clip-editor | [13](docs/specs/13-compact-clip-editor.md) | Sidebar edits, clipboard/history, waveform seeking, speed/stretch/pitch and matching exports | recording, render-export |
 
 Build order: shared state and DSP contracts; capture and rendering; processing and analysis; preset/editor integration; verification; Pages publication and lab links. The research module is not a dependency of the baseline product.
 

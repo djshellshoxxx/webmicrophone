@@ -279,3 +279,39 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 When changing the runtime dependency or adding an encoder/model, update this provenance record and preserve the applicable notices in the deployed artifact. Development-only tools are listed in `package-lock.json`; their presence in the build environment does not mean their complete source is bundled into the application.
 
+
+## MPL-2.0 — SoundTouchJS time and pitch processing
+
+The clip editor uses the unmodified `Stretch` implementation from `@soundtouchjs/core@2.1.1` for pitch-preserving WSOLA time stretching. The package also declares `@soundtouchjs/interpolation-strategy-lanczos@2.1.1` as a pinned dependency. Both packages identify their license as MPL-2.0. The application's worker, endpoint treatment and anti-aliasing sample-rate adapter are separate WebMicrophone source files; the upstream package files have not been modified.
+
+| Package | Pinned distribution | Source form |
+| --- | --- | --- |
+| `@soundtouchjs/core@2.1.1` | [npm distribution](https://registry.npmjs.org/@soundtouchjs/core/-/core-2.1.1.tgz) | [Version 2.1.1 core source](https://github.com/cutterbl/SoundTouchJS/tree/d9e39a7ddcf74c7a145bbba45856f30068c82b79/packages/core) |
+| `@soundtouchjs/interpolation-strategy-lanczos@2.1.1` | [npm distribution](https://registry.npmjs.org/@soundtouchjs/interpolation-strategy-lanczos/-/interpolation-strategy-lanczos-2.1.1.tgz) | [Version 2.1.1 interpolation source](https://github.com/cutterbl/SoundTouchJS/tree/d9e39a7ddcf74c7a145bbba45856f30068c82b79/packages/interpolation-strategy-lanczos) |
+
+These source links identify upstream tag `v2.1.1`, resolved to commit `d9e39a7ddcf74c7a145bbba45856f30068c82b79`. The exact package archives and integrity hashes are recorded in this application's `package-lock.json`. Source Code Form is available without charge at the links above under MPL-2.0. Bundling or minifying the distribution does not remove those source-license rights.
+
+The core JavaScript files retain this upstream attribution:
+
+```text
+SoundTouch JS audio processing library
+Copyright (c) Olli Parviainen
+Copyright (c) Ryan Berdeen
+Copyright (c) Jakub Fiala
+Copyright (c) Steve 'Cutter' Blades
+
+Licensed under the Mozilla Public License, v. 2.0.
+You can obtain one at https://mozilla.org/MPL/2.0/.
+```
+
+The package license notice reads:
+
+```text
+Mozilla Public License Version 2.0
+
+This package is licensed under the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+Full license text: https://www.mozilla.org/en-US/MPL/2.0/
+```
+
+The complete license is available at [Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/). The pinned upstream license file is [available here](https://github.com/cutterbl/SoundTouchJS/blob/d9e39a7ddcf74c7a145bbba45856f30068c82b79/LICENSE).

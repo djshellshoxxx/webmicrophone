@@ -46,6 +46,7 @@ test('a recording left active by a closed tab is presented as a recovered interr
 test('decoded source limits account for channel count, sample rate and duration', () => {
   assert.doesNotThrow(() => validateSourceShape({ sampleRate: 48000, channels: 2, frames: 28800000 }));
   assert.throws(() => validateSourceShape({ sampleRate: 48000, channels: 2, frames: 48000 * 601 }), /10 minutes/);
+  assert.throws(() => validateSourceShape({ sampleRate: 48000, channels: 2, frames: 48000 * 600 + 1 }), /10 minutes/);
   assert.throws(() => validateSourceShape({ sampleRate: 96000, channels: 2, frames: 96000 * 600 }), /256 MiB/);
   assert.throws(() => validateSourceShape({ sampleRate: 48000, channels: 6, frames: 48000 }), /multichannel/);
   assert.throws(() => validateSourceShape({ sampleRate: 48000, channels: 1, frames: 0 }), /duration/);
