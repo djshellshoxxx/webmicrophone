@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>WebMicrophone browser verification</title>
+  <style>
+    body{font:16px/1.6 system-ui;background:#11151c;color:#e4eaf2;margin:32px;max-width:1000px}button{font:inherit;padding:12px 18px;margin:8px 8px 12px 0;background:#b6f763;color:#142011;border:0;border-radius:6px;cursor:pointer}button:disabled{opacity:.4;cursor:default}li{padding:7px 0}.pass{color:#b6f763}.fail{color:#ff8a8a}.running{color:#f1d58a}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#19222c;padding:20px}a{color:#a9cfff}
+  </style>
+</head>
+<body>
+  <h1>WebMicrophone browser verification</h1>
+  <p>Tests run locally using generated audio after pressing the button. No physical microphone is requested. Test takes use a verification label; only those IDs are cleaned up.</p>
+  <button id="run" disabled>Run checks</button><button id="reload-check" disabled>Verify saved take after reload</button>
+  <p id="status">Loading test modules…</p>
+  <ol id="results"></ol><pre id="summary">No checks have run.</pre>
+  <script type="module" src="./browser-harness.js"></script>
+</body>
+</html>

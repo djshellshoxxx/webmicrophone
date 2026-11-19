@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0e1116">
+  <meta name="description" content="A local microphone workbench from Circuit Drift Labs. Record, clean up, shape ten EQ bands, inspect audio and export original or filtered takes.">
+  <meta property="og:title" content="WebMicrophone — Circuit Drift Labs">
+  <meta property="og:description" content="Capture. Shape. Listen. Microphone recording and audio tools that run in your browser.">
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://djshellshoxxx.github.io/webmicrophone/">
+  <link rel="icon" type="image/svg+xml" href="/mark.svg">
+  <title>WebMicrophone — Circuit Drift Labs</title>
+</head>
+<body>
+  <a class="skip-link" href="#workbench">Skip to workbench</a>
+  <header class="site-header">
+    <a class="brand" href="https://djshellshoxxx.github.io/circuitdriftlabs/" aria-label="Circuit Drift Labs home"><img src="/mark.svg" width="34" height="34" alt=""><span>CIRCUIT <b>DRIFT</b><small>LABS</small></span></a>
+    <nav aria-label="Main navigation"><a href="#guide">Quick guide</a><a href="https://github.com/djshellshoxxx/webmicrophone/blob/main/SPEC.md" target="_blank" rel="noopener">Specifications ↗</a><a href="https://github.com/djshellshoxxx/webmicrophone" target="_blank" rel="noopener">Source ↗</a></nav>
+    <button id="panic" class="panic" title="Mute all playback. Keyboard shortcut: Escape.">MUTE <kbd>Esc</kbd></button>
+  </header>
+  <main id="workbench">
+    <section class="intro">
+      <div><p class="eyebrow"><i class="signal-led" id="signal-led"></i> CDL / AUDIO WORKBENCH 01</p><h1>Web<span>Microphone</span><span class="version">BETA</span></h1><p class="lede">Capture. Shape. Listen.</p></div>
+      <div class="local-note"><span class="local-dot"></span> Audio stays in your browser.<small>No account. No audio upload. Save the takes you want to keep.</small></div>
+    </section>
+    <div id="status" class="status-bar" role="status" aria-live="polite"><span class="status-indicator"></span><span id="status-message">Ready when you are. Connect a microphone, open audio, or try the test signal.</span><span id="context-info">48 kHz working engine</span></div>
+    <div class="workbench-grid">
+      <aside class="source-rack" aria-label="Source and monitoring">
+        <section class="rack-section">
+          <h2><span>01</span> Source</h2>
+          <button id="connect-mic" class="button primary full"><span aria-hidden="true">◉</span> Enable microphone</button>
+          <div class="button-row"><button id="open-audio" class="button">Open audio</button><button id="demo" class="button">Test signal</button></div>
+          <input id="audio-file" type="file" accept="audio/*,.wav,.flac,.mp3,.m4a,.ogg,.webm" hidden>
+          <label class="field">Input device<select id="device"><option value="">System default</option></select></label>
+          <label class="field">Microphone type<select id="microphone-profile"></select></label>
+          <p id="microphone-advice" class="hint"></p>
+          <p class="micro-note">Profiles set starting filters, not hardware calibration. Channel preference applies when connecting.</p>
+          <div class="source-details" id="source-details">Microphone not connected</div>
+          <label class="range-field"><span>Input trim <output data-value="inputGainDb">0 dB</output></span><input aria-label="Input trim" type="range" data-setting="inputGainDb" min="-30" max="24" step="0.5"></label>
+        </section>
+        <section class="rack-section">
+          <h2><span>02</span> Situation</h2>
+          <label class="field">What are you recording?<select id="scene"></select></label>
+          <p id="scene-description" class="hint"></p>
+          <label class="range-field"><span>Processed mix <output data-value="mix">100%</output></span><input aria-label="Processed mix" type="range" data-setting="mix" min="0" max="1" step="0.01"></label>
+          <label class="range-field"><span>Output trim <output data-value="outputGainDb">0 dB</output></span><input aria-label="Output trim" type="range" data-setting="outputGainDb" min="-48" max="12" step="0.5"></label>
+        </section>
+        <section class="rack-section monitoring">
+          <h2><span>03</span> Listen live</h2>
+          <button id="monitor" class="button full" aria-pressed="false">Monitoring off</button>
+          <label class="range-field"><span>Playback delay <output id="monitor-delay-value">0.35 s</output></span><input id="monitor-delay" aria-label="Live playback delay" type="range" min="0" max="3" step="0.05" value="0.35"></label>
+          <label class="range-field"><span>Monitor level <output id="monitor-level-value">−18 dB</output></span><input id="monitor-level" aria-label="Monitor level" type="range" min="-60" max="0" step="1" value="-18"></label>
+          <label class="check"><input id="peak-guard" type="checkbox" checked> Sustained-level auto mute</label>
+          <p class="hint">Use headphones for live monitoring. Delay shifts playback; it does not break a speaker–microphone loop. Auto mute is a level guard, not guaranteed feedback detection.</p>
+          <button id="stop-mic" class="text-button" disabled>Disconnect microphone</button>
+        </section>
+      </aside>
+      <div class="main-rack">
+        <section class="signal-panel" aria-labelledby="signal-heading">
+          <div class="panel-heading"><div><p class="eyebrow">LIVE SIGNAL</p><h2 id="signal-heading">See what changes.</h2></div><div class="legend"><span class="raw-key">Original</span><span class="wet-key">Processed</span></div></div>
+          <div class="meters">
+            <div><span>INPUT PEAK</span><strong id="input-peak">−∞ <small>dBFS</small></strong><meter id="input-meter" min="-60" max="0" value="-60" aria-label="Input peak dBFS"></meter></div>
+            <div><span>OUTPUT PEAK</span><strong id="output-peak">−∞ <small>dBFS</small></strong><meter id="output-meter" min="-60" max="0" value="-60" aria-label="Output peak dBFS"></meter></div>
+            <div><span>INPUT RMS</span><strong id="rms">−∞ <small>dBFS</small></strong><small id="clip-status">No clipping detected</small></div>
+            <div><span>LEVEL CHANGE</span><strong id="level-change">— <small>dB</small></strong><small>Includes gain & filtering</small></div>
+          </div>
+          <div class="meter-tools"><span>OBSERVED PEAK HOLD <output id="input-hold">−∞ dBFS</output> in · <output id="output-hold">−∞ dBFS</output> out</span><button id="reset-peaks" class="text-button">Reset peaks / clips</button></div>
+          <div class="view-tabs" role="group" aria-label="Signal visualization"><button class="active" data-view="waveform" aria-pressed="true">Waveform</button><button data-view="spectrum" aria-pressed="false">Spectrum / changes</button><button data-view="spectrogram" aria-pressed="false">Spectrogram</button><select id="visual-channel" aria-label="Channel to visualize"><option value="left">Left</option><option value="right">Right</option></select><span id="signal-state">NO INPUT</span></div>
+          <div class="scope"><canvas id="waveform" aria-label="Original and processed waveforms"></canvas><canvas id="spectrum" aria-label="Original and processed frequency spectra" hidden></canvas><canvas id="spectrogram" aria-label="Processed audio spectrogram over time" hidden></canvas></div>
+          <p class="scope-caption" id="scope-caption">Left-channel original and processed waveforms share the same scale. Peak and RMS meters measure both channels.</p>
+          <div class="transport">
+            <div class="button-row"><button id="record" class="button record"><span class="record-dot"></span> Record</button><button id="pause" class="button" disabled>Pause</button><button id="stop" class="button" disabled>Stop</button></div>
+            <output id="record-time" aria-label="Recorded duration">00:00</output>
+            <div class="record-options"><label>Count-in<select id="countdown"><option value="0">Off</option><option value="3">3 sec</option><option value="5">5 sec</option><option value="10">10 sec</option></select></label><label>Auto stop<select id="duration"><option value="600">10 min limit</option><option value="10">10 sec</option><option value="30">30 sec</option><option value="60">1 min</option><option value="120">2 min</option><option value="300">5 min</option></select></label></div>
+          </div>
+          <div class="transport-note"><span id="record-state">Records original + processed</span><label class="check"><input id="play-after" type="checkbox"> Stop capture, then play back</label></div>
+        </section>
+        <section class="eq-panel" aria-labelledby="eq-heading">
+          <div class="panel-heading"><div><p class="eyebrow">10-BAND PARAMETRIC EQ</p><h2 id="eq-heading">Find your frequencies.</h2></div><label class="check"><input type="checkbox" data-setting="eqEnabled"> EQ enabled</label></div>
+          <div id="eq-editor"></div>
+        </section>
+        <section class="processing-panel">
+          <div class="module-tabs" role="tablist" aria-label="Audio tools">
+            <button role="tab" id="tab-cleanup" aria-selected="true" aria-controls="cleanup-panel" data-panel="cleanup">Clean up</button>
+            <button role="tab" id="tab-dynamics" aria-selected="false" aria-controls="dynamics-panel" data-panel="dynamics">Dynamics</button>
+            <button role="tab" id="tab-phase" aria-selected="false" aria-controls="phase-panel" data-panel="phase">Phase & stereo</button>
+            <button role="tab" id="tab-tools" aria-selected="false" aria-controls="tools-panel" data-panel="tools">Mic tools</button>
+          </div>
+          <div id="cleanup-panel" class="module-body" role="tabpanel" aria-labelledby="tab-cleanup">
+            <div class="module-columns">
+              <div><h3>Noise & rumble</h3><div class="two-fields"><label class="field">Low cut / Hz · 20 = off<input data-setting="highpassHz" type="number" min="20" max="2000" step="1"></label><label class="field">High cut / Hz · ≥20k = off<input data-setting="lowpassHz" type="number" min="1000" max="22000" step="100"></label></div><label class="field">Mains hum<select data-setting="humHz"><option value="0">Off</option><option value="50">50 Hz</option><option value="60">60 Hz</option></select></label><label class="check emphasis"><input type="checkbox" data-setting="speech"> Speech focus <span class="engine-label">RNNoise</span></label><p class="hint">Keep speech over general noise. Turn this off for birds, rain, hail and music.</p></div>
+              <div><h3>Learn the background</h3><p class="hint">Play or capture a moment containing only unwanted sound. Learning wanted sounds can remove them too.</p><div class="button-row"><button id="learn-noise" class="button">Learn 2 seconds</button><button id="clear-noise" class="text-button">Clear profile</button></div><p id="noise-status" class="micro-note">No learned profile. Reduction passes through.</p><label class="range-field"><span>Noise reduction <output data-value="denoise">0%</output></span><input data-setting="denoise" aria-label="Noise reduction" type="range" min="0" max="1" step="0.01"></label><p class="hint">A fixed spectral noise profile. This reduces matching noise; it does not identify arbitrary sound sources.</p></div>
+            </div>
+          </div>
+          <div id="dynamics-panel" class="module-body" role="tabpanel" aria-labelledby="tab-dynamics" hidden>
+            <div class="module-columns"><div><h3>Gentle gate</h3><label class="check"><input type="checkbox" data-setting="gateEnabled"> Enable gate</label><label class="range-field"><span>Threshold <output data-value="gateThresholdDb"></output></span><input data-setting="gateThresholdDb" aria-label="Gate threshold" type="range" min="-90" max="-6" step="1"></label><label class="field">Release / ms<input type="number" data-setting="gateReleaseMs" min="20" max="2000" step="10"></label><p class="hint">Quiets pauses. A gate cannot remove traffic under an active voice, and can cut off quiet wildlife.</p></div><div><h3>Compression</h3><label class="check"><input type="checkbox" data-setting="compressorEnabled"> Enable compressor</label><div class="two-fields"><label class="field">Threshold / dB<input type="number" data-setting="compressorThresholdDb" min="-60" max="0" step="1"></label><label class="field">Ratio<input type="number" data-setting="compressorRatio" min="1" max="20" step="0.5"></label><label class="field">Attack / ms<input type="number" data-setting="compressorAttackMs" min="0.1" max="100" step="0.1"></label><label class="field">Release / ms<input type="number" data-setting="compressorReleaseMs" min="20" max="2000" step="10"></label></div><label class="check"><input type="checkbox" data-setting="limiterEnabled"> Sample-peak output limiter</label><p class="hint">The limiter caps sample peaks; it is not a true-peak or loudness meter.</p></div></div>
+          </div>
+          <div id="phase-panel" class="module-body" role="tabpanel" aria-labelledby="tab-phase" hidden>
+            <div class="module-columns"><div><h3>Polarity & alignment</h3><div class="button-row"><label class="check"><input type="checkbox" data-setting="polarityL"> Invert left Ø</label><label class="check"><input type="checkbox" data-setting="polarityR"> Invert right Ø</label></div><label class="range-field"><span>Relative channel delay <output data-value="channelDelayMs"></output></span><input data-setting="channelDelayMs" aria-label="Relative channel delay" type="range" min="-20" max="20" step="0.1"></label><p class="hint">Positive delays right; negative delays left. Polarity flips the signal. Delay changes phase by frequency.</p><label class="check"><input type="checkbox" data-setting="mono"> Mono sum check</label><div class="correlation"><span>STEREO CORRELATION</span><output id="correlation-value">—</output><meter min="-1" max="1" value="0" id="correlation-meter" aria-label="Stereo correlation"></meter></div></div><div><h3>Right-channel phase rotation</h3><label class="check"><input type="checkbox" data-setting="phaseEnabled"> Enable all-pass filter</label><div class="two-fields"><label class="field">Center / Hz<input type="number" data-setting="phaseFrequency" min="20" max="20000" step="10"></label><label class="field">Q<input type="number" data-setting="phaseQ" min="0.1" max="20" step="0.1"></label></div><p class="hint">An all-pass filter changes phase around the chosen frequency while preserving magnitude. It is not a constant-angle shift across all frequencies. A mono microphone may feed identical left and right channels.</p></div></div>
+          </div>
+          <div id="tools-panel" class="module-body" role="tabpanel" aria-labelledby="tab-tools" hidden>
+            <div class="module-columns"><div><h3>Microphone check</h3><p class="hint">Measure a quiet moment to estimate the captured noise floor. Speak or play next and leave room below clipping.</p><button id="measure-noise" class="button">Measure noise floor · 3 s</button><div class="measurement"><output id="noise-floor">—</output><span>dBFS noise floor</span></div><button id="suggest-gate" class="text-button" disabled>Use as a gentle gate starting point</button><p id="gain-advice" class="hint">Input and noise levels are digital dBFS, not calibrated sound-pressure levels.</p></div><div><h3>Chromatic tuner</h3><label class="check"><input id="tuner-enabled" type="checkbox"> Enable tuner</label><div class="tuner"><output id="tuner-note">—</output><div><output id="tuner-hz">No stable pitch</output><output id="tuner-cents">Play one sustained note</output></div></div><meter id="tuner-meter" min="-50" max="50" value="0" aria-label="Tuning cents"></meter><label class="field small-field">A4 reference / Hz<input id="tuner-reference" type="number" min="400" max="480" value="440" step="1"></label><p class="hint">Measures the original left channel, 55–1,500 Hz. Use one sustained note; silence or unstable input shows no pitch.</p></div></div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <section class="session-panel" aria-labelledby="session-heading">
+      <div class="panel-heading"><div><p class="eyebrow">RECORDINGS & FILES</p><h2 id="session-heading">Keep the take. Change the treatment.</h2></div><span class="chip" id="storage-status">Local browser storage</span></div>
+      <div class="session-columns">
+        <div class="take-column"><h3>Your takes</h3><div id="takes-list" class="takes-list"><p class="empty-state">Your recorded takes will appear here. Open an audio file to re-render an existing recording.</p></div><button id="refresh-takes" class="text-button">Refresh takes</button><p class="hint">Browser storage can be cleared or evicted. Download recordings you want to keep.</p></div>
+        <div class="clip-column"><h3 id="clip-title">No clip selected</h3><canvas id="clip-waveform" class="clip-waveform" aria-label="Selected recording waveform and trim region"></canvas><div class="two-fields"><label class="field">Trim start / seconds<input id="trim-start" type="number" min="0" step="0.01" value="0"></label><label class="field">Trim end / seconds<input id="trim-end" type="number" min="0" step="0.01" value="0"></label></div><div class="button-row"><button id="play-clip" class="button" disabled>Play selection</button><button id="stop-playback" class="button" disabled>Stop playback</button><label class="check"><input id="loop" type="checkbox"> Loop</label></div><label class="field">Audition<select id="audition-mode"><option value="processed">Current processing</option><option value="original">Original</option><option value="difference">Difference · diagnostic</option></select></label><p class="hint">Playback stops the microphone first. Difference is aligned original minus processed audio, including EQ and gain changes; it is not a pure noise stem.</p><button id="download-original" class="text-button" disabled>Download original</button></div>
+        <div class="export-column"><h3>Render & save audio</h3><label class="field">Audio to export<select id="export-source"><option value="current">Original with current settings</option><option value="original">Original capture / decoded audio</option><option value="recorded">Filtered as recorded</option></select></label><div class="two-fields"><label class="field">Format<select id="export-format"><option value="wav24">WAV · 24-bit PCM</option><option value="wav16">WAV · 16-bit PCM</option><option value="wav32">WAV · 32-bit float</option></select></label><label class="field">Sample rate<select id="export-rate"><option value="44100">44.1 kHz</option><option value="48000" selected>48 kHz</option><option value="96000">96 kHz</option></select></label></div><label class="field" id="bitrate-field" hidden>Compressed bitrate<select id="export-bitrate"><option value="64">64 kbps</option><option value="96">96 kbps</option><option value="128" selected>128 kbps</option><option value="192">192 kbps</option><option value="256">256 kbps</option></select></label><label class="check"><input id="normalize" type="checkbox"> Normalize sample peak to −1 dBFS</label><p id="export-note" class="hint">WAV bitrate is set by sample rate × bit depth × channels. Compressed encoders appear when supported by this browser.</p><div class="button-row"><button id="export-audio" class="button primary" disabled>Render & download</button><button id="cancel-export" class="button" hidden>Cancel</button></div><progress id="export-progress" max="1" value="0" hidden aria-label="Export progress"></progress><p id="export-status" class="micro-note">Select a take or open an audio file.</p></div>
+      </div>
+    </section>
+    <section class="settings-panel" aria-labelledby="settings-heading">
+      <div><p class="eyebrow">YOUR SIGNAL CHAIN</p><h2 id="settings-heading">Save a sound. Come back to it.</h2><p class="hint">Settings include all EQ bands, cleanup, dynamics, phase and the learned noise profile. Loading a preset never enables your microphone or monitoring.</p></div>
+      <div class="settings-controls"><label class="field">Preset name<input id="preset-name" type="text" maxlength="80" placeholder="e.g. Field mic · windy trail"></label><div class="button-row"><button id="save-preset" class="button primary">Save settings</button><button id="export-preset" class="button">Download JSON</button><button id="import-preset" class="button">Import JSON</button></div><label class="field">Saved in this browser<select id="saved-preset"><option value="">Choose saved settings…</option></select></label><div class="button-row"><button id="rename-preset" class="text-button" disabled>Rename selected</button><button id="delete-preset" class="text-button" disabled>Delete selected</button></div><p class="micro-note">To rename, select saved settings and edit the name above.</p><button id="reset-settings" class="text-button">Reset processing to defaults</button><input id="preset-file" type="file" accept="application/json,.json" hidden></div>
+    </section>
+    <section id="guide" class="guide">
+      <div><p class="eyebrow">QUICK GUIDE</p><h2>A useful recording starts here.</h2></div>
+      <ol><li><strong>Choose a source.</strong> Enable the microphone, select its input and type, or open an existing audio file. The test signal lets you explore without a microphone.</li><li><strong>Choose what matters.</strong> Speech focus is for human voices. Birds and weather use gentle filters and a background-only noise profile.</li><li><strong>Listen and compare.</strong> Use headphones for live monitoring. Watch the waveform and spectrum, adjust EQ, and solo a band to find a troublesome frequency.</li><li><strong>Record, then refine.</strong> Capture original and filtered audio together. Select a take, trim it, change settings and render again from the original.</li><li><strong>Save the result.</strong> Download audio and a JSON preset. A higher export rate does not add detail that the microphone never captured.</li></ol>
+      <div class="guide-notes"><p><strong>What cleanup can do.</strong> Reduce rumble, hum, steady noise and many disturbances around speech. Overlapping sounds can remain. Birds, hail and rain are not automatically separated into individual stems.</p><p><strong>Recording limits.</strong> The initial version supports foreground sessions up to ten minutes and bounded file imports. Switching devices, backgrounding or locking a phone can interrupt capture. Partial takes are kept where storage permits.</p><p><strong>What stays local.</strong> Audio, takes, analysis and presets stay in this browser. This page loads application assets; it does not upload your audio or filenames.</p></div>
+    </section>
+  </main>
+  <footer><a class="back-link" href="https://djshellshoxxx.github.io/circuitdriftlabs/">← Back to Circuit Drift Labs</a><span>WebMicrophone 0.1.0 · Browser audio workbench</span><a href="./THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">Runtime credits & licenses ↗</a></footer>
+  <script type="module" src="/src/app.js"></script>
+</body>
+</html>
