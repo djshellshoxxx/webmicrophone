@@ -358,7 +358,7 @@ async function connectMicrophone({forRecord = false, token = null} = {}) {
   state.sourceConnecting = true;
   syncControls();
   const stillWanted = () => generation === state.sourceGeneration && (token === null || token === state.recordToken);
-  let stream;
+  let stream, sourceNode;
   try {
     const context = await ensureAudio();
     if (!stillWanted()) throw abortError();
@@ -373,8 +373,10 @@ async function connectMicrophone({forRecord = false, token = null} = {}) {
     if (!stillWanted()) { stream.getTracks().forEach(track => track.stop()); throw abortError(); }
     const track = stream.getAudioTracks()[0];
     if (!track) throw new Error('The selected device did not provide an audio track.');
-    state.sourceNode = context.createMediaStreamSource(stream);
-    state.sourceNode.connect(state.graph.input);
+    if (track.readyState === 'ended') throw new Error('The microphone disconnected before it was ready. Reconnect it and try again.');
+    sourceNode = context.createMediaStreamSource(stream);
+    sourceNode.connect(state.graph.input);
+    state.sourceNode = sourceNode;
     state.stream = stream;
     const channels = track.getSettings?.().channelCount;
     state.inputChannelCount = channels === 1 || channels === 2 ? channels : null;
@@ -391,16 +393,27 @@ async function connectMicrophone({forRecord = false, token = null} = {}) {
       if (state.stream === stream && state.recordingBusy) void run(() => interruptInput('The input stopped delivering audio. Recovering the recorded portion.', 'input-muted'));
     });
     await enumerateDevices().catch(() => {});
+    // A cancellation or device event can run while device labels are loading.
+    // Its result belongs to that newer state, not to this connection attempt.
+    if (!stillWanted()) throw abortError();
+    if (state.stream !== stream || track.readyState === 'ended') throw new Error('The microphone disconnected before it was ready. Reconnect it and try again.');
     notify('Microphone connected. Monitoring is off; you can record without listening live.');
     return stream;
   } catch (error) {
-    if (state.stream !== stream) stream?.getTracks().forEach(track => track.stop());
+    const wanted = stillWanted();
+    if (stream && state.stream === stream) disconnectSources();
+    else {
+      stream?.getTracks().forEach(track => track.stop());
+      try { sourceNode?.disconnect(); } catch { /* Already disconnected. */ }
+    }
     if (generation === state.sourceGeneration) state.sourceConnecting = false;
     syncControls();
+    if (!wanted) throw abortError();
     if (error.name === 'NotAllowedError') throw new Error('Microphone permission was not granted. Allow it in the browser and try again, or open an audio file.');
     if (error.name === 'NotFoundError') throw new Error('No microphone was found. Connect one or open an audio file.');
     if (error.name === 'NotReadableError') throw new Error('The microphone could not be opened. Check whether another application is using it, then try again.');
     if (error.name === 'OverconstrainedError') throw new Error('The selected microphone settings are unavailable. Choose System default and reconnect.');
+    if (error.name === 'AbortError') throw new Error('The browser interrupted microphone startup. Check the device and try again, or open an audio file.');
     throw error;
   }
 }
@@ -483,6 +496,7 @@ async function beginRecording() {
   byId('record-state').textContent = 'Preparing the input…';
   byId('record-time').textContent = '00:00';
   session.stopPlayback();
+  let startup;
   try {
     if (!liveSourceActive()) await connectMicrophone({forRecord: true, token});
     const context = await ensureAudio();
@@ -501,11 +515,12 @@ async function beginRecording() {
     setStage('starting');
     const generated = Boolean(state.demoNode);
     const label = `${generated ? 'Test signal' : 'Microphone'} · ${new Date().toLocaleString()}`;
-    recorderStartup = state.recorder.start({rawNode: state.graph.originalOutput, processedNode: state.graph.output,
+    startup = state.recorder.start({rawNode: state.graph.originalOutput, processedNode: state.graph.output,
       channels: 2, inputChannelCount: state.inputChannelCount, label,
       settingsSnapshot: state.settings, latencyFrames: state.graph.latencySamples,
       durationSeconds: Number(byId('duration').value)});
-    await recorderStartup;
+    recorderStartup = startup;
+    await startup;
     if (generated && state.recorder.metadata) {
       state.recorder.metadata.sourceKind = 'generated';
       state.recorder.metadata.captureNote = 'Locally generated test signal; track alignment is described by the latency metadata.';
@@ -522,7 +537,7 @@ async function beginRecording() {
       byId('record-state').textContent = 'Records original + processed';
     }
     throw error;
-  } finally { recorderStartup = null; }
+  } finally { if (startup && recorderStartup === startup) recorderStartup = null; }
 }
 
 async function stopRecording({reason = 'manual'} = {}) {
@@ -530,8 +545,9 @@ async function stopRecording({reason = 'manual'} = {}) {
   if (reason !== 'manual' || requestedRecordStopReason === 'manual') requestedRecordStopReason = reason;
   state.recordToken++;
   if (stage === 'arming') {
-    state.sourceGeneration++;
-    state.sourceConnecting = false;
+    // Permission may already have returned while device enumeration is pending.
+    // Release that provisional source before a new recording can adopt it.
+    disconnectSources();
     setStage('idle');
     byId('record-state').textContent = 'Recording cancelled before capture';
     notify('Recording cancelled. Any later microphone permission response will not start a take.');
