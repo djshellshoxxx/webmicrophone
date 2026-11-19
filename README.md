@@ -2,7 +2,11 @@
 
 A Circuit Drift Labs browser workbench for microphone recording, audio cleanup, parametric EQ, live analysis and local re-rendering.
 
-[Open WebMicrophone](https://djshellshoxxx.github.io/webmicrophone/) · [Circuit Drift Labs](https://djshellshoxxx.github.io/circuitdriftlabs/) · [Full specification](SPEC.md)
+[Open WebMicrophone](https://djshellshoxxx.github.io/webmicrophone/) · [Circuit Drift Labs](https://djshellshoxxx.github.io/circuitdriftlabs/) · [Full specification](SPEC.md) · [Release verification](docs/RELEASE.md)
+
+![WebMicrophone displaying aligned original and processed waveforms for a generated test signal](docs/images/live-waveform.jpg)
+
+Live public-app screenshot of the generated test signal: aligned original audio in teal and processed audio in orange, with a −12 dB EQ cut at 440 Hz.
 
 ## Product scope
 

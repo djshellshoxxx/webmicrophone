@@ -38,3 +38,5 @@ Open an existing recording, preview processing, render a new result from the unc
 
 WAV is the reliable baseline. Browser-compressed encoding may run in real time and may differ by platform. Faster-than-real-time rendering and exact file sizes are features to measure, not assumptions.
 
+
+Compressed bitrate controls are encoder targets rather than promises of a constant file-average bitrate. The selected sample rate prepares the input to the encoder; a browser codec can choose a different final encoded rate. Compressed filenames identify their format rather than asserting that the requested input rate is the final encoded rate. WAV exports write the selected sample rate explicitly.

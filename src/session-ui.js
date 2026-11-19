@@ -24,7 +24,11 @@ export class SessionUI {
       await this.play();
     });
     this.id('trim-start').onchange=this.id('trim-end').onchange=()=>this.drawClip();
-    this.id('export-format').onchange=()=>this.id('bitrate-field').hidden=this.id('export-format').value.startsWith('wav');
+    this.id('export-format').onchange=()=>{
+      const wav=this.id('export-format').value.startsWith('wav');
+      this.id('bitrate-field').hidden=wav;
+      this.id('export-note').textContent=wav?'WAV bitrate is sample rate × bit depth × channels. The selected rate is written into the exported WAV.':'Compressed bitrate is a target. The sample rate prepares the audio for encoding; the browser codec may choose a different final rate or bitrate. Compressed export runs in real time.';
+    };
     this.id('export-audio').onclick=()=>this.run(()=>this.exportAudio());
     this.id('cancel-export').onclick=()=>this.abortController?.abort();
     this.id('download-original').onclick=()=>this.run(()=>this.downloadOriginal());
@@ -107,7 +111,11 @@ export class SessionUI {
     this.id('export-status').textContent=this.buffer?formatTime(this.buffer.duration)+' · '+this.buffer.numberOfChannels+' channels · '+this.buffer.sampleRate+' Hz working audio':'Select a take or open an audio file.';
     this.id('export-source').querySelector('option[value=recorded]').disabled=!this.activeTake?.processedAvailable;
     if(!this.activeTake?.processedAvailable&&this.id('export-source').value==='recorded')this.id('export-source').value='current';
-    this.id('storage-status').textContent=['memory','session'].includes(this.activeTake?.storageMode)?'Session only · download before leaving':'Stored in this browser';
+    const hasStoredId=Boolean(this.activeTake?.id);
+    const sessionOnly=!hasStoredId||['memory','session'].includes(this.activeTake?.storageMode);
+    this.id('storage-status').textContent=!hasStoredId&&this.activeTake?.sourceKind==='generated'
+      ?'Generated signal · session only'
+      :sessionOnly?'Session only · download before leaving':'Stored in this browser';
     this.drawClip();
   }
   trim(){
@@ -195,10 +203,11 @@ export class SessionUI {
         blob=await encodeWav(buffer,{bitDepth,sampleRate,normalize,trim:exportTrim,signal,onProgress});extension='wav';
       }else{
         const result=await exportCompressed(buffer,{format,bitrateKbps,sampleRate,normalize,trim:exportTrim,signal,onProgress});
-        ({blob,extension}=result);encoderNote=' · encoder target '+Math.round(result.bitrate/1000)+' kbps';
+        ({blob,extension}=result);encoderNote=' · encoder target '+Math.round((result.bitrate||result.requestedBitrate)/1000)+' kbps';
       }
       if(signal.aborted)throw new DOMException('Export cancelled','AbortError');
-      downloadBlob(blob,baseName+'-'+(mode==='current'?'filtered':mode)+'-'+sampleRate+'.'+extension);
+      const formatLabel=format.startsWith('wav')?sampleRate+'Hz':format;
+      downloadBlob(blob,baseName+'-'+(mode==='current'?'filtered':mode)+'-'+formatLabel+'.'+extension);
       this.id('export-status').textContent='Downloaded · '+(blob.size/1024/1024).toFixed(2)+' MiB'+encoderNote+(mode==='current'?' · selection processed from its beginning':'');
       this.notify('Audio exported. The original recording remains available.');
     }catch(error){
