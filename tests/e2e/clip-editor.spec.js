@@ -47,6 +47,13 @@ test('compact editor changes real stereo samples, restores history and preserves
   const original = fixtureWav();
   await page.locator('#audio-file').setInputFiles({name: 'quarter-sections.wav', mimeType: 'audio/wav', buffer: original});
   await expect(panel(page).locator('[data-clip-duration]')).toHaveText('1.00 s');
+  await page.locator('#export-source').selectOption('original');
+  await page.locator('#export-format').selectOption('wav32');
+  // Browser decoders can use different full-scale integer normalization. Compare
+  // edits against this browser's decoded source, with exact Float32 equality.
+  const reference = await download(page, page.locator('#export-audio'), testInfo.outputPath('decoded-reference.wav'));
+  const referenceInfo = wavInfo(reference);
+  expect(referenceInfo).toMatchObject({channels: 2, rate: 48000, bits: 32, tag: 3, frames: 48000});
 
   await enter(number(page, 'start'), 0.25);
   await enter(number(page, 'end'), 0.5);
@@ -68,10 +75,11 @@ test('compact editor changes real stereo samples, restores history and preserves
   const rendered = await download(page, page.locator('#export-audio'), testInfo.outputPath('edited-stereo.wav'));
   const info = wavInfo(rendered);
   expect(info).toMatchObject({channels: 2, rate: 48000, bits: 32, tag: 3, frames: 48000});
-  for (const [index, value] of [2000, 4000, 3000, 1000].entries()) {
+  for (const [index, sourceQuarter] of [1, 3, 2, 0].entries()) {
     const at = info.offset + (index * 12000 + 6000) * 8;
-    expect(rendered.readFloatLE(at)).toBeCloseTo(value / 32768, 6);
-    expect(rendered.readFloatLE(at + 4)).toBeCloseTo(-value / 32768, 6);
+    const before = referenceInfo.offset + (sourceQuarter * 12000 + 6000) * 8;
+    expect(rendered.readFloatLE(at)).toBe(reference.readFloatLE(before));
+    expect(rendered.readFloatLE(at + 4)).toBe(reference.readFloatLE(before + 4));
   }
   const recovered = await download(page, page.locator('#download-original'), testInfo.outputPath('unchanged-original.wav'));
   expect(recovered.equals(original)).toBe(true);
