@@ -126,7 +126,10 @@ export class SessionUI {
     this.setBusy(true);
     try{
     let original=this.originalFile;
-    if(!original&&this.activeTake?.id)original=await getOriginalFile(this.activeTake.id);
+    // A captured PCM take has no source-file blob. Its original samples are
+    // already loaded and must remain downloadable if storage later fails.
+    if(!original&&this.activeTake?.id&&this.activeTake.sourceFormat!=='float32-pcm')original=await getOriginalFile(this.activeTake.id);
+    if(!original&&(this.activeTake?.originalFileAvailable||this.activeTake?.sourceKind==='file'))throw new Error('The original imported file is unavailable. Use Render & download to save the loaded audio as a new file.');
     if(original){
       const blob=original.blob||original.file||original;
       downloadBlob(blob,original.filename||this.activeTake?.label||'original-audio');

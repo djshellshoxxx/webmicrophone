@@ -159,8 +159,9 @@ export class TakeRecorder {
       } catch (error) {
         this.writeFailure = new Error(`Recording stopped because audio could not be saved. The committed portion is recoverable. ${error.message}`);
         this.onError(this.writeFailure);
-        this.state = 'stopping';
-        this.node?.port.postMessage({ type: 'stop' });
+        // Use the same bounded shutdown as a manual stop: a suspended audio
+        // context may never acknowledge this command after storage fails.
+        void this.stop({ reason: 'storage-error' });
       }
     });
   }

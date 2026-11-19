@@ -39,6 +39,10 @@ jobs:
         run: npm run test:e2e
       - name: Build the GitHub Pages artifact
         run: npm run build
+      - name: Verify microphone failures and recording recovery in the Pages build
+        env:
+          WEBMIC_TEST_BUILD: '1'
+        run: npx playwright test tests/e2e/mic-failures.spec.js tests/e2e/recording-recovery.spec.js
       - name: Preserve browser test evidence
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7

@@ -187,3 +187,25 @@ test('stop supersedes a draining pause without duplicate commands, stale state o
     assert.equal(statuses.includes('paused'), false);
   } finally { memoryTakes.delete(recorder.metadata.id); }
 });
+
+test('a failed chunk write recovers its committed prefix when stop acknowledgement is lost', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const errors = [];
+  const recorder = new TakeRecorder({ sampleRate: 48000, state: 'suspended' }, { onError: error => errors.push(error.message) });
+  recorder.state = 'recording';
+  recorder.metadata = { id: 'quota-lost-stop', frameCount: 4, duration: 4 / 48000, pauses: [] };
+  recorder.db = { transaction() { throw new DOMException('No space remains.', 'QuotaExceededError'); } };
+  recorder.node = { port: { postMessage() {}, close() {} }, disconnect() {} };
+  recorder.queueChunk({ index: 1, frameStart: 4, frames: 4, capacity: 4, channels: 1, trackCount: 2, data: new ArrayBuffer(32) });
+  await recorder.pendingWrites;
+  assert.equal(recorder.state, 'stopping');
+  t.mock.timers.tick(6001);
+  // Finalization must finish even when the audio thread never answers stop.
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(recorder.state, 'stopped');
+  assert.equal(recorder.metadata.status, 'interrupted');
+  assert.equal(recorder.metadata.frameCount, 4);
+  assert.match(recorder.metadata.message, /committed portion is recoverable/);
+  assert.equal(errors.length, 1);
+});
